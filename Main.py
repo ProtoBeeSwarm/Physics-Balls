@@ -1,6 +1,7 @@
-# Import as nessecary
-import pygame
 import random
+
+import pygame
+
 from Objects import Ball
 
 # Define constants for setup
@@ -21,6 +22,7 @@ SPEED_MAX = 1
 SPEED_CAP = 5
 ENEMY_SPAWN_NUMBER = 3
 
+
 # Check if two pygame objects are overlapping
 def pixel_collision_player(mask1, rect1, mask2, rect2):
     offset_x = rect2[0] - rect1[0]
@@ -28,12 +30,14 @@ def pixel_collision_player(mask1, rect1, mask2, rect2):
     overlap = mask1.overlap(mask2, (offset_x, offset_y))
     return overlap
 
+
 # Create new ball object
 def ball_create(image, size, location, screen):
     ball = pygame.image.load(image)
     ball = pygame.transform.smoothscale(ball, size)
     screen.blit(ball, location)
     return ball
+
 
 # Create new ball rectangle
 def ball_rect_create(ball, loc_start_pos):
@@ -53,38 +57,39 @@ def main():
     screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])  # Define pygame screen
     clock = pygame.time.Clock()  # Create a clock to manage frame rate
 
-    # Generate balls
+    # Generate enemies
     enemies = []
     for i in range(ENEMY_SPAWN_NUMBER):
         ball_create("ball.png", BALL_SIZE, BALL_START_POS, screen)
         enemies = enemies + [Ball]
 
-    # Draw balls to screen
+    # Draw enemies to screen
     player_ball = ball_create("player_ball.png", BALL_SIZE, PLAYER_START_POS, screen)
     player_ball_rect = ball_rect_create(player_ball, PLAYER_START_POS)
     player_mask = pygame.mask.from_surface(player_ball)
     pygame.display.flip()
 
-
-
+    # Once per frame code
     running = True
-
     while running:
+        # wait until the next frame needs to be drawn
         clock.tick(FRAME_RATE)
 
-        screen.fill(SCREEN_COLOR)
-
+        # Increase max speed for balls
         global SPEED_CAP
         SPEED_CAP = SPEED_CAP + TIME_INCREASE_CO_EFFICIENT
 
+        # Move player ball to mouse's position
         pos = pygame.mouse.get_pos()
         player_ball_rect.center = pos
 
+        # Move balls & once implemented, handle collisions
         Ball.movement(Ball)
-        Ball.collide()
+        # Ball.collide()  # For now do not collide as that has not been implemented
 
+        # Draw to screen
+        screen.fill(SCREEN_COLOR)
         screen.blit(player_ball, player_ball_rect)
-
         pygame.display.flip()
 
         for event in pygame.event.get():
