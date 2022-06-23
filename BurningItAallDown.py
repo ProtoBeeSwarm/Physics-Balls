@@ -21,8 +21,8 @@ ENEMY_SPAWN_NUMBER = 3
 SPEED_MIN = 3  # Minimum speed
 SPEED_MAX = 5  # Maximum speed
 RANDOM_INCREMENT = 3  # How much vel can change by every collision
-ENEMY_IMAGE = "ball.png"  # What sprites to use for enemy and player
-PLAYER_IMAGE = "player_ball.png"
+ENEMY_IMAGE = "Assets/ball.png"  # What sprites to use for enemy and player
+PLAYER_IMAGE = "Assets/player_ball.png"
 
 
 # Ball class, enemy and player inherits from it
