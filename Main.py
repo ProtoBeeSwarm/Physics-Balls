@@ -1,5 +1,4 @@
 import random
-
 import pygame
 
 from Objects import Ball
@@ -31,7 +30,7 @@ def pixel_collision_player(mask1, rect1, mask2, rect2):
     return overlap
 
 
-# Create new ball object
+# Create surface from the ball image
 def ball_create(image, size, location, screen):
     ball = pygame.image.load(image)
     ball = pygame.transform.smoothscale(ball, size)
@@ -39,31 +38,34 @@ def ball_create(image, size, location, screen):
     return ball
 
 
-# Create new ball rectangle
+# Create new ball rectangle from a ball surface
 def ball_rect_create(ball, loc_start_pos):
     ball_rect = ball.get_rect()
     ball_rect.move_ip(loc_start_pos)
     return ball_rect
 
 
-# def update_ball(ball, ball_rect, x_vel, y_vel, screen):
-#     ball_rect.move_ip(x_vel, y_vel)
-#     screen.blit(ball, ball_rect)
-#     x_vel, y_vel = velocity_update(ball_rect, x_vel, y_vel)
-#     return x_vel, y_vel
+def update_ball(ball, ball_rect, x_vel, y_vel, screen):
+    ball_rect.move_ip(x_vel, y_vel)
+    screen.blit(ball, ball_rect)
+    x_vel, y_vel = velocity_update(ball_rect, x_vel, y_vel)
+    return x_vel, y_vel
 
 
 def main():
     screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])  # Define pygame screen
     clock = pygame.time.Clock()  # Create a clock to manage frame rate
 
-    # Generate enemies
+    # Initialize Enemy ball
     enemies = []
     for i in range(ENEMY_SPAWN_NUMBER):
-        ball_create("ball.png", BALL_SIZE, BALL_START_POS, screen)
-        enemies = enemies + [Ball]
+        # ball_create("player_ball.png", BALL_SIZE, BALL_START_POS, screen)
+        # new_ball = Ball("player_ball.png", pygame.math.Vector2(2, 3), screen)
+        enemies = enemies + [Ball(ball_create("player_ball.png", BALL_SIZE, BALL_START_POS, screen),
+                                  pygame.math.Vector2(2, 3), screen)]
+        # enemies = enemies + [ball_create("player_ball.png", BALL_SIZE, BALL_START_POS, screen)]
 
-    # Draw enemies to screen
+    # Initialize Player Ball
     player_ball = ball_create("player_ball.png", BALL_SIZE, PLAYER_START_POS, screen)
     player_ball_rect = ball_rect_create(player_ball, PLAYER_START_POS)
     player_mask = pygame.mask.from_surface(player_ball)
@@ -84,7 +86,8 @@ def main():
         player_ball_rect.center = pos
 
         # Move balls & once implemented, handle collisions
-        Ball.movement(Ball)
+        for enemy in enemies:
+            enemy.move()
         # Ball.collide()  # For now do not collide as that has not been implemented
 
         # Draw to screen
