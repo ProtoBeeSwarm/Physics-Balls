@@ -1,3 +1,4 @@
+import math
 import random
 
 import pygame
@@ -7,22 +8,22 @@ SCREEN_SIZE = (1400, 900)
 FRAME_RATE = 60
 
 # Define constants for runtime
-SCREEN_COLOR = (0, 0, 0)
+SCREEN_COLOR = (196, 175, 144)  # c4af90
 BALL_SIZE = (100, 100)
 BALL_START_POS = (random.randint(0, 1300), random.randint(0, 800))
 PLAYER_START_POS = (random.randint(0, 1300), random.randint(0, 800))
 TIME_INCREASE_CO_EFFICIENT = 5 * (10 ** -4)
-START_SPEED_MIN = 3
-START_SPEED_MAX = 5
-SPEED_CAP = 5
-ENEMY_SPAWN_NUMBER = 3
+# START_SPEED_MIN = 3
+# START_SPEED_MAX = 5
+# SPEED_CAP = 5
+ENEMY_SPAWN_NUMBER = 4
 
 # Define constants for Ball class
 SPEED_MIN = 3  # Minimum speed
-SPEED_MAX = 5  # Maximum speed
+SPEED_MAX = 7  # Maximum speed
 RANDOM_INCREMENT = 3  # How much vel can change by every collision
-ENEMY_IMAGE = "Assets/ball.png"  # What sprites to use for enemy and player
-PLAYER_IMAGE = "Assets/player_ball.png"
+ENEMY_IMAGE = "Assets/Predator.png"  # What sprites to use for enemy and player
+PLAYER_IMAGE = "Assets/Prey.png"
 
 
 # Ball class, enemy and player inherits from it
@@ -39,7 +40,10 @@ class Ball:
             raise Exception("Ball initialized of invalid ball_type")
 
         self.surface = pygame.transform.smoothscale(self.surface, BALL_SIZE)
-        self.rect = self.surface.get_rect()
+        self.rect = self.surface.get_rect()  # Make new rect
+
+        self.rect.move_ip(random.randint(0, SCREEN_SIZE[0] - self.rect.width),  # Move to random position
+                          random.randint(0, SCREEN_SIZE[1] - self.rect.height))
 
         self.vel = pygame.math.Vector2(random.randint(SPEED_MIN, SPEED_MAX),
                                        random.randint(SPEED_MIN, SPEED_MAX))
@@ -59,9 +63,47 @@ class Ball:
         # This code is only reachable if the two are actually colliding, so we shouldn't need to check again
         if self.ball_type == "Player":  # It may help to check if other is an enemy, but that shouldn't be needed
             return True  # There was a collision
-        # elif self.ball_type == "Enemy":
-        #     # TODO: Add proper enemy-enemy collision code; do not return anything except None
-        #     print("Enemy-Enemy collision detected")
+        elif self.ball_type == "Enemy":
+
+            # Get vector magnitude (speed)
+            ball_init_speed = self.vel.magnitude()
+
+            # Get angle of normal line
+            ball_pos_delta = pygame.Vector2((self.vel.x - other.vel.x), (self.vel.y - other.vel.y))
+            if ball_pos_delta.x == 0:  # This is just to avoid div by 0, could be done better though
+                ball_pos_delta.x = 1
+            collision_normal_angle = math.atan(ball_pos_delta.y / ball_pos_delta.x)
+            if ball_pos_delta.x < 0 and ball_pos_delta.y < 0:
+                collision_normal_angle += math.pi
+            # get initial angle of travel from vel vector
+
+            ball_init_travel_direction = math.atan(self.vel.y / self.vel.x)
+            if self.vel.x < 0 and self.vel.y < 0:
+                ball_init_travel_direction += math.pi
+            # calculate difference in angle of normal line, and init travel direction
+
+            collision_delta_theta = collision_normal_angle - ball_init_travel_direction
+            # mirror init trav direction over norm ln to get final travel direction angle
+
+            ball_final_travel_direction = ball_init_travel_direction + 2 * collision_delta_theta
+            ball_final_travel_vec = pygame.Vector2(ball_init_speed * math.cos(ball_final_travel_direction),
+                                                   ball_init_speed * math.sin(ball_final_travel_direction))
+            self.vel = ball_final_travel_vec  # overwrite self.vel, so it will now travel in the correct direction
+
+            self.rect.move_ip(self.vel.x, self.vel.y)  # Move rect based off vel, so it doesn't double collide
+
+            # Get the angle of the collision:
+            # if (self.vel.x - other.vel.x) != 0:
+            #     cos_theta = math.cos(math.atan((self.vel.y - other.vel.y) / (self.vel.x - other.vel.x)))
+            # else:  # In the case of divide by zero, just use the exact value, being zero
+            #     cos_theta = 0  # $\lim_{b \to 0} \cos{(\tan^{-1}{(\frac{1}{b})})} = \frac{\pi}{2}$
+            #
+            # # Lose the force of self.vel*cos(θ)
+            # self.vel -= self.vel * cos_theta
+            # # Gain the force of other.vel*cos(θ)
+            # self.vel += other.vel * cos_theta
+
+            # self.rect.move_ip(self.vel.x, self.vel.y)  # Move rect based off vel
 
         return
 
@@ -130,11 +172,16 @@ def main():
                         is_dead = True
             # Draw to screen
             screen.blit(ball.surface, ball.rect)
+            pygame.draw.line(screen, (255, 255, 0), ball.rect.center, ball.rect.center + ball.vel * 15)
+            vector_scaler = 30  # I am unreasonably proud of that joke, and it's not even that good
+            pygame.draw.line(screen, (255, 0, 0), ball.rect.center, pygame.math.Vector2(ball.rect.center[0] + ball.vel.x * vector_scaler, ball.rect.center[1]))
+            pygame.draw.line(screen, (0, 255, 0), ball.rect.center, pygame.math.Vector2(ball.rect.center[0], ball.rect.center[1] + ball.vel.y * vector_scaler))
 
         pygame.display.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or is_dead:
+            # if event.type == pygame.QUIT:  # Man I miss being able to use multi line comments inside a single line :(
                 running = False
 
 
