@@ -45,39 +45,58 @@ class Ball:
         self.rect.move_ip(random.randint(0, SCREEN_SIZE[0] - self.rect.width),  # Move to random position
                           random.randint(0, SCREEN_SIZE[1] - self.rect.height))
 
-        self.vel = pygame.math.Vector2(random.randint(SPEED_MIN, SPEED_MAX),
+        self.vel = pygame.math.Vector2(random.randint(SPEED_MIN, SPEED_MAX),  # Stores current velocity
                                        random.randint(SPEED_MIN, SPEED_MAX))
+        self.vel_tf = pygame.math.Vector2(0, 0)  # Used in collisions
 
         # self.screen = screen  # Just use global screen
         # self.mask = pygame.mask.from_surface(self.surface)
         # self.vel = vel
 
     def collide(self, other):
+        def coordinate_transform(initial, theta):
+            return pygame.math.Vector2(initial.x * math.cos(theta) + initial.y * math.sin(theta),
+                                       -initial.x * math.sin(theta) + initial.y * math.cos(theta))
+
         offset_x = other.rect[0] - self.rect[0]
         offset_y = other.rect[1] - self.rect[1]
+
         if not pygame.mask.from_surface(self.surface).overlap(pygame.mask.from_surface(other.surface),
                                                               (offset_x, offset_y)):
             # If it's not actually colliding with the other:
             return
-
         # This code is only reachable if the two are actually colliding, so we shouldn't need to check again
+
         if self.ball_type == "Player":  # It may help to check if other is an enemy, but that shouldn't be needed
             return True  # There was a collision
         elif self.ball_type == "Enemy":
-            5+5  # This is just so python doesn't get mad
-
             # I think of the initial and final axis names as x and y, and the transformed ones being [0] and [1]
+
             # Get the angle that [0] axis is rotated from x-axis
+            ball_pos_delta = pygame.Vector2((self.vel.x - other.vel.x), (self.vel.y - other.vel.y))  # Get difference
+            if ball_pos_delta.x != 0:  # If it won't cause a div by zero error:
+                collision_normal_angle = math.atan(ball_pos_delta.y / ball_pos_delta.x)
+            else:  # If it will div by zero, just use the exact value
+                collision_normal_angle = math.pi / 2
+            if ball_pos_delta.x < 0 and ball_pos_delta.y < 0:  # Because -1/-1 == 1/1, we have to acc for Q3 issues
+                collision_normal_angle += math.pi / 2
+
+            # Add offset if nessecary
+            # collision_normal_angle -= math.pi / 2
+
             # Do a vel coordinate transform of self and other vel; so that [0] axis is along normal line of collision
+            self.vel_tf = coordinate_transform(self.vel, collision_normal_angle)
+            # other.vel_tf = coordinate_transform(self.vel, collision_normal_angle)
+
             # Affect other's vel based off own [0] axis
-                # Just add own [0] vel to other's [0] vel
+            # other.vel_tf.x += self.vel_tf.x
+
             # *= -1 own normal vel \[this will bounce it off the other\]
+            self.vel_tf.x *= -1
+
             # transform own and other's vel back to standard cords
-
-        def coordinate_transform(initial, theta):
-            return (initial[0]*math.cos(theta) + initial[1]*math.sin(theta),
-                    -initial[0] * math.sin(theta) + initial[1]*math.cos(theta))
-
+            self.vel = coordinate_transform(self.vel_tf, -collision_normal_angle)
+            # other.vel = coordinate_transform(other.vel_tf, -collision_normal_angle)
 
         return
 
@@ -148,14 +167,28 @@ def main():
             screen.blit(ball.surface, ball.rect)
             pygame.draw.line(screen, (255, 255, 0), ball.rect.center, ball.rect.center + ball.vel * 15)
             vector_scaler = 30  # I am unreasonably proud of that joke, and it's not even that good
-            pygame.draw.line(screen, (255, 0, 0), ball.rect.center, pygame.math.Vector2(ball.rect.center[0] + ball.vel.x * vector_scaler, ball.rect.center[1]))
-            pygame.draw.line(screen, (0, 255, 0), ball.rect.center, pygame.math.Vector2(ball.rect.center[0], ball.rect.center[1] + ball.vel.y * vector_scaler))
+            pygame.draw.line(screen, (255, 0, 0), ball.rect.center,
+                             pygame.math.Vector2(ball.rect.center[0] + ball.vel.x * vector_scaler, ball.rect.center[1]))
+            pygame.draw.line(screen, (0, 255, 0), ball.rect.center,
+                             pygame.math.Vector2(ball.rect.center[0], ball.rect.center[1] + ball.vel.y * vector_scaler))
+
+            pygame.draw.line(screen, (255, 0, 255), ball.rect.center,
+                             pygame.math.Vector2(ball.rect.center[0] + ball.vel_tf.x * vector_scaler,
+                                                 ball.rect.center[1]))
+            pygame.draw.line(screen, (0, 255, 255), ball.rect.center,
+                             pygame.math.Vector2(ball.rect.center[0],
+                                                 ball.rect.center[1] + ball.vel_tf.y * vector_scaler))
+            pygame.draw.line(screen, (255, 255, 255), ball.rect.center,
+                             pygame.math.Vector2(ball.rect.center[0] + ball.vel_tf.x * vector_scaler,
+                                                 ball.rect.center[1] + ball.vel_tf.y * vector_scaler))
 
         pygame.display.update()
 
+        x=5
+
         for event in pygame.event.get():
-            if event.type == pygame.QUIT or is_dead:
-            # if event.type == pygame.QUIT:  # Man I miss being able to use multi line comments inside a single line :(
+            # if event.type == pygame.QUIT or is_dead:
+            if event.type == pygame.QUIT:  # Man I miss being able to use multi line comments inside a single line :(
                 running = False
 
 
