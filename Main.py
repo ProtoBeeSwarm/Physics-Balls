@@ -64,46 +64,20 @@ class Ball:
         if self.ball_type == "Player":  # It may help to check if other is an enemy, but that shouldn't be needed
             return True  # There was a collision
         elif self.ball_type == "Enemy":
+            5+5  # This is just so python doesn't get mad
 
-            # Get vector magnitude (speed)
-            ball_init_speed = self.vel.magnitude()
+            # I think of the initial and final axis names as x and y, and the transformed ones being [0] and [1]
+            # Get the angle that [0] axis is rotated from x-axis
+            # Do a vel coordinate transform of self and other vel; so that [0] axis is along normal line of collision
+            # Affect other's vel based off own [0] axis
+                # Just add own [0] vel to other's [0] vel
+            # *= -1 own normal vel \[this will bounce it off the other\]
+            # transform own and other's vel back to standard cords
 
-            # Get angle of normal line
-            ball_pos_delta = pygame.Vector2((self.vel.x - other.vel.x), (self.vel.y - other.vel.y))
-            if ball_pos_delta.x == 0:  # This is just to avoid div by 0, could be done better though
-                ball_pos_delta.x = 1
-            collision_normal_angle = math.atan(ball_pos_delta.y / ball_pos_delta.x)
-            if ball_pos_delta.x < 0 and ball_pos_delta.y < 0:
-                collision_normal_angle += math.pi
-            # get initial angle of travel from vel vector
+        def coordinate_transform(initial, theta):
+            return (initial[0]*math.cos(theta) + initial[1]*math.sin(theta),
+                    -initial[0] * math.sin(theta) + initial[1]*math.cos(theta))
 
-            ball_init_travel_direction = math.atan(self.vel.y / self.vel.x)
-            if self.vel.x < 0 and self.vel.y < 0:
-                ball_init_travel_direction += math.pi
-            # calculate difference in angle of normal line, and init travel direction
-
-            collision_delta_theta = collision_normal_angle - ball_init_travel_direction
-            # mirror init trav direction over norm ln to get final travel direction angle
-
-            ball_final_travel_direction = ball_init_travel_direction + 2 * collision_delta_theta
-            ball_final_travel_vec = pygame.Vector2(ball_init_speed * math.cos(ball_final_travel_direction),
-                                                   ball_init_speed * math.sin(ball_final_travel_direction))
-            self.vel = ball_final_travel_vec  # overwrite self.vel, so it will now travel in the correct direction
-
-            self.rect.move_ip(self.vel.x, self.vel.y)  # Move rect based off vel, so it doesn't double collide
-
-            # Get the angle of the collision:
-            # if (self.vel.x - other.vel.x) != 0:
-            #     cos_theta = math.cos(math.atan((self.vel.y - other.vel.y) / (self.vel.x - other.vel.x)))
-            # else:  # In the case of divide by zero, just use the exact value, being zero
-            #     cos_theta = 0  # $\lim_{b \to 0} \cos{(\tan^{-1}{(\frac{1}{b})})} = \frac{\pi}{2}$
-            #
-            # # Lose the force of self.vel*cos(θ)
-            # self.vel -= self.vel * cos_theta
-            # # Gain the force of other.vel*cos(θ)
-            # self.vel += other.vel * cos_theta
-
-            # self.rect.move_ip(self.vel.x, self.vel.y)  # Move rect based off vel
 
         return
 
